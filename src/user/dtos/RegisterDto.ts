@@ -6,8 +6,8 @@ import { FranchiseMessagesHelper } from 'src/franchise/helpers/messages.helper';
 
 export class RegisterDto {
 
-    @MinLength(4, { message: UserMessagesHelper.REGISTER_STRONG_PASSWORD })
-    @MaxLength(20, { message: UserMessagesHelper.REGISTER_STRONG_PASSWORD, })
+    @MinLength(4, { message: UserMessagesHelper.AUTH_LOGIN_NOT_FOUND })
+    @MaxLength(20, { message: UserMessagesHelper.AUTH_LOGIN_NOT_FOUND, })
     login: string;
 
     @IsEmail({}, { message: UserMessagesHelper.AUTH_EMAIL_NOT_FOUND })

@@ -14,6 +14,10 @@ export class FranchiseService {
         return createdFranchise.save();
     }
 
+    async getFranchise() {
+        return await this.franchiseModel.find();
+    }
+
     async existsByName(franchise: string): Promise<boolean> {
         const result = await this.franchiseModel.find({ franchise });
         if (result && result.length > 0) {

@@ -7,5 +7,6 @@ export const UserMessagesHelper = {
     REGISTER_NAME_NOT_FOUND: 'Favor preencher o nome.',
     REGISTER_STRONG_PASSWORD: 'A Senha deve ter de 4 a 12 caracteres e conter maiúsculas, minúsculas, números e caracteres especiais',
     REGISTER_LOGIN_FOUND: 'Já existe uma conta com o usuário informado',
-    REGISTER_EMAIL_FOUND: 'Já existe uma conta com o email informado'
+    REGISTER_EMAIL_FOUND: 'Já existe uma conta com o email informado',
+    GET_USER_NOT_FOUND: 'Usuário não encontrado'
 };

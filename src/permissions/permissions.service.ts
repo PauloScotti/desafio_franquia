@@ -21,4 +21,16 @@ export class PermissionsService {
         }
         return false;
     }
+
+    async getPermissions() {
+        return await this.permissionsModel.find();
+    }
+
+    async getPermissionById(id: string) {
+        return await this.permissionsModel.findById(id);
+    }
+
+    async getPermissionByName(name: string) {
+        return await this.permissionsModel.findOne({ permissions: name });
+    }
 }
