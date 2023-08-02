@@ -3,8 +3,10 @@ import { Model } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
-import { RegisterDto } from 'src/user/dtos/RegisterDto';
+import { RegisterDto } from 'src/user/dtos/register.dto';
 import * as CryptoJS from "crypto-js";
+import { UpdateUserDto } from './dtos/update.dto';
+import { UpdateUserAdmDto } from './dtos/updateadm.dto';
 
 @Injectable()
 export class UserService {
@@ -59,6 +61,26 @@ export class UserService {
 
     async getUserById(id: string) {
         return await this.userModel.findById(id);
+    }
+
+    async getUsers() {
+        return await this.userModel.find();
+    }
+
+    async getUserByFranchise(franchise: string) {
+        return await this.userModel.find({ franchise: franchise });
+    }
+
+    async updateuser(id: string, dto: UpdateUserDto) {
+        return await this.userModel.findByIdAndUpdate(id, dto);
+    }
+
+    async updateUserByAdm(id: string, dto: UpdateUserAdmDto) {
+        return await this.userModel.findByIdAndUpdate(id, dto);
+    }
+
+    async deleteUserByAdm(id: string) {
+        return await this.userModel.findByIdAndDelete(id);
     }
 
 }

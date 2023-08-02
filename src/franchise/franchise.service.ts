@@ -25,4 +25,16 @@ export class FranchiseService {
         }
         return false;
     }
+
+    async getFranchiseById(id: string) {
+        return await this.franchiseModel.findById(id);
+    }
+
+    async updateFranchise(id: string, dto: FranchiseDto) {
+        return await this.franchiseModel.findByIdAndUpdate(id, dto);
+    }
+
+    async deleteFranchise(id: string) {
+        return await this.franchiseModel.findByIdAndDelete(id);
+    }
 }

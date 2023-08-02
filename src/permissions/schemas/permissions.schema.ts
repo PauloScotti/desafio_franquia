@@ -6,6 +6,9 @@ export type PermissionsDocument = HydratedDocument<Permissions>;
 @Schema()
 export class Permissions {
     @Prop({ required: true })
+    cod: number;
+
+    @Prop({ required: true })
     permissions: string;
 
 }

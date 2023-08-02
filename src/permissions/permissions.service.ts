@@ -30,7 +30,15 @@ export class PermissionsService {
         return await this.permissionsModel.findById(id);
     }
 
-    async getPermissionByName(name: string) {
-        return await this.permissionsModel.findOne({ permissions: name });
+    async getPermissionByCode(cod: number) {
+        return await this.permissionsModel.findOne({ cod: cod });
+    }
+
+    async updatePermission(id: string, dto: PermissionsDto) {
+        return await this.permissionsModel.findByIdAndUpdate(id, dto);
+    }
+
+    async deletePermission(id: string) {
+        return await this.permissionsModel.findByIdAndDelete(id);
     }
 }
