@@ -102,13 +102,6 @@ export class UserController {
         }
 
         if (levelLoggedUser.cod === 1) {
-            if (await this.userService.existsByEmail(dto.email)) {
-                throw new BadRequestException(UserMessagesHelper.REGISTER_EMAIL_FOUND)
-            }
-
-            if (await this.userService.existsByLogin(dto.login)) {
-                throw new BadRequestException(UserMessagesHelper.REGISTER_LOGIN_FOUND)
-            }
 
             await this.userService.updateUserByAdm(id, dto);
         } else {

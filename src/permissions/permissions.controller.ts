@@ -108,7 +108,15 @@ export class PermissionsController {
         }
 
         if (level.cod === 1) {
-            await this.permissionsService.deletePermission(id);
+
+            const usersInPermission = await this.userService.getUserByPermission(id);
+
+            if (usersInPermission.length > 0) {
+                throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_HAS_USERS);
+            } else {
+                await this.permissionsService.deletePermission(id);
+            }
+
         } else {
             throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
         }

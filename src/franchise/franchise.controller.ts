@@ -109,7 +109,15 @@ export class FranchinseController {
         }
 
         if (level.cod === 1) {
-            await this.franchiseService.deleteFranchise(id);
+
+            const usersInFranchise = await this.userService.getUserByFranchise(id);
+
+            if (usersInFranchise.length > 0) {
+                throw new BadRequestException(FranchiseMessagesHelper.FRANCHISE_HAS_USERS);
+            } else {
+                await this.franchiseService.deleteFranchise(id);
+            }
+
         } else {
             throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
         }

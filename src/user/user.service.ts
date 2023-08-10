@@ -71,6 +71,10 @@ export class UserService {
         return await this.userModel.find({ franchise: franchise });
     }
 
+    async getUserByPermission(permissions: string) {
+        return await this.userModel.find({ permissions: permissions });
+    }
+
     async updateuser(id: string, dto: UpdateUserDto) {
         return await this.userModel.findByIdAndUpdate(id, dto);
     }
