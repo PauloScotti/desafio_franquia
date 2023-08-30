@@ -9,7 +9,7 @@ import { PermissionsDto } from './dtos/permissions.dto';
 export class PermissionsService {
     constructor(@InjectModel(Permissions.name) private permissionsModel: Model<PermissionsDocument>) { }
 
-    async create(dto: PermissionsDto): Promise<Permissions> {
+    async createdPermission(dto: PermissionsDto): Promise<Permissions> {
         const createdPermission = new this.permissionsModel(dto);
         return createdPermission.save();
     }

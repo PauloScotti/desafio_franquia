@@ -14,7 +14,7 @@ export class UserService {
         @InjectModel(User.name) private userModel: Model<UserDocument>,
     ) { }
 
-    async create(dto: RegisterDto): Promise<User> {
+    async createdUser(dto: RegisterDto): Promise<User> {
         dto.password = CryptoJS.AES.encrypt(dto.password, process.env.USER_CYPHER_SECRET_KEY).toString();
 
         const createdUser = new this.userModel(dto);

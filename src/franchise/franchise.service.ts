@@ -9,7 +9,7 @@ import { FranchiseDto } from './dtos/franchise.dto';
 export class FranchiseService {
     constructor(@InjectModel(Franchise.name) private franchiseModel: Model<FranchiseDocument>) { }
 
-    async create(dto: FranchiseDto): Promise<Franchise> {
+    async createdFranchise(dto: FranchiseDto): Promise<Franchise> {
         const createdFranchise = new this.franchiseModel(dto);
         return createdFranchise.save();
     }

@@ -15,6 +15,28 @@ export class UserController {
         private readonly permissionsService: PermissionsService
     ) { }
 
+    async getUserNotFound(userId: any) {
+        const user = await this.userService.getUserById(userId);
+
+        if (!user) {
+            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
+        }
+
+        return user;
+    }
+
+    async checkPermission(userId: any) {
+        const user = await this.getUserNotFound(userId);
+
+        const level = await this.permissionsService.getPermissionById((user.permissions).toString());
+
+        if (!level) {
+            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
+        }
+
+        return level;
+    }
+
     @Get('user')
     async getUser(@Request() req) {
         const { userId } = req?.user;
@@ -33,21 +55,12 @@ export class UserController {
     }
 
     @Get('user/:id')
-    async getUserByMId(@Request() req, @Param() params) {
+    async getUserById(@Request() req, @Param() params) {
         const { id } = params;
 
         const { userId } = req?.user;
-        const user = await this.userService.getUserById(userId);
 
-        if (!user) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
-
-        const level = await this.permissionsService.getPermissionById((user.permissions).toString());
-
-        if (!level) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
+        const level = await this.checkPermission(userId);
 
         if (level.cod === 1) {
             return await this.userService.getUserById(id);
@@ -66,17 +79,9 @@ export class UserController {
     @Get('adm/users')
     async getUsers(@Request() req) {
         const { userId } = req?.user;
-        const user = await this.userService.getUserById(userId);
+        const user = await this.getUserNotFound(userId);
 
-        if (!user) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
-
-        const level = await this.permissionsService.getPermissionById((user.permissions).toString());
-
-        if (!level) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
+        const level = await this.checkPermission(userId);
 
         if (level.cod === 1) {
             return await this.userService.getUsers()
@@ -89,17 +94,8 @@ export class UserController {
     async updateUserByAdm(@Request() req, @Param() params, @Body() dto: UpdateUserAdmDto) {
         const { id } = params;
         const { userId } = req?.user;
-        const loggedUser = await this.userService.getUserById(userId);
 
-        if (!loggedUser) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
-
-        const levelLoggedUser = await this.permissionsService.getPermissionById((loggedUser.permissions).toString());
-
-        if (!levelLoggedUser) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
+        const levelLoggedUser = await this.checkPermission(userId);
 
         if (levelLoggedUser.cod === 1) {
 
@@ -112,17 +108,9 @@ export class UserController {
     @Post('register')
     async registerUser(@Request() req, @Body() dto: RegisterDto) {
         const { userId } = req?.user;
-        const user = await this.userService.getUserById(userId);
+        const user = await this.getUserNotFound(userId);
 
-        if (!user) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
-
-        const level = await this.permissionsService.getPermissionById((user.permissions).toString());
-
-        if (!level) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
+        const level = await this.checkPermission(userId);
 
         if (level.cod === 1) {
             if (await this.userService.existsByEmail(dto.email)) {
@@ -133,7 +121,7 @@ export class UserController {
                 throw new BadRequestException(UserMessagesHelper.REGISTER_LOGIN_FOUND)
             }
 
-            return this.userService.create(dto)
+            return this.userService.createdUser(dto)
         } else if (level.cod === 2) {
             if (await this.userService.existsByEmail(dto.email)) {
                 throw new BadRequestException(UserMessagesHelper.REGISTER_EMAIL_FOUND)
@@ -148,7 +136,7 @@ export class UserController {
             dto.permissions = (level._id).toString();
             dto.franchise = (user.franchise).toString();
 
-            return this.userService.create(dto)
+            return this.userService.createdUser(dto)
         } else {
             throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
         }
@@ -160,13 +148,8 @@ export class UserController {
     async deleteUserByAdm(@Request() req, @Param() params) {
         const { id } = params;
         const { userId } = req?.user;
-        const loggedUser = await this.userService.getUserById(userId);
 
-        if (!loggedUser) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
-
-        const levelLoggedUser = await this.permissionsService.getPermissionById((loggedUser.permissions).toString());
+        const levelLoggedUser = await this.checkPermission(userId);
 
         if (!levelLoggedUser) {
             throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);

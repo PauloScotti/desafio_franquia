@@ -16,14 +16,18 @@ export class FranchinseController {
         private readonly permissionsService: PermissionsService
     ) { }
 
-    @Get()
-    async getUser(@Request() req) {
-        const { userId } = req?.user;
+    async getUserNotFound(userId: any) {
         const user = await this.userService.getUserById(userId);
 
         if (!user) {
             throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
         }
+
+        return user;
+    }
+
+    async checkPermission(userId: any) {
+        const user = await this.getUserNotFound(userId);
 
         const level = await this.permissionsService.getPermissionById((user.permissions).toString());
 
@@ -32,7 +36,19 @@ export class FranchinseController {
         }
 
         if (level.cod === 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
+    @Get()
+    async getFranchise(@Request() req) {
+        const { userId } = req?.user;
+
+        const isAdm = await this.checkPermission(userId);
+
+        if (isAdm) {
             return this.franchiseService.getFranchise();
         } else {
             throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
@@ -42,24 +58,15 @@ export class FranchinseController {
     @Post()
     async registerFranchise(@Request() req, @Body() dto: FranchiseDto) {
         const { userId } = req?.user;
-        const user = await this.userService.getUserById(userId);
 
-        if (!user) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
+        const isAdm = await this.checkPermission(userId);
 
-        const level = await this.permissionsService.getPermissionById((user.permissions).toString());
-
-        if (!level) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
-
-        if (level.cod === 1) {
+        if (isAdm) {
             if (await this.franchiseService.existsByName(dto.franchise)) {
                 throw new BadRequestException(FranchiseMessagesHelper.REGISTER_FRANCHISE_FOUND)
             }
 
-            await this.franchiseService.create(dto);
+            await this.franchiseService.createdFranchise(dto);
         } else {
             throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
         }
@@ -69,19 +76,10 @@ export class FranchinseController {
     async updateFranchise(@Request() req, @Param() params, @Body() dto: FranchiseDto) {
         const { id } = params;
         const { userId } = req?.user;
-        const user = await this.userService.getUserById(userId);
 
-        if (!user) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
+        const isAdm = await this.checkPermission(userId);
 
-        const level = await this.permissionsService.getPermissionById((user.permissions).toString());
-
-        if (!level) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
-
-        if (level.cod === 1) {
+        if (isAdm) {
             if (await this.franchiseService.existsByName(dto.franchise)) {
                 throw new BadRequestException(FranchiseMessagesHelper.REGISTER_FRANCHISE_FOUND)
             }
@@ -96,19 +94,10 @@ export class FranchinseController {
     async deleeFranchise(@Request() req, @Param() params) {
         const { id } = params;
         const { userId } = req?.user;
-        const user = await this.userService.getUserById(userId);
 
-        if (!user) {
-            throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
-        }
+        const isAdm = await this.checkPermission(userId);
 
-        const level = await this.permissionsService.getPermissionById((user.permissions).toString());
-
-        if (!level) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
-
-        if (level.cod === 1) {
+        if (isAdm) {
 
             const usersInFranchise = await this.userService.getUserByFranchise(id);
 

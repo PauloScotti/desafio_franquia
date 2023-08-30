@@ -4,7 +4,6 @@ import { LoginDto } from './dtos/login.dto';
 import { MessagesHelper } from './helpers/messages.helper';
 import { UserService } from 'src/user/user.service';
 import { PermissionsService } from 'src/permissions/permissions.service';
-import { FranchiseService } from 'src/franchise/franchise.service';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -14,7 +13,6 @@ export class AuthService {
     constructor(
         private readonly userService: UserService,
         private readonly permissionsService: PermissionsService,
-        private readonly franchiseService: FranchiseService,
         private readonly jwtService: JwtService,
     ) { }
 
