@@ -8,6 +8,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { JwtAuthGuard } from './auth/guards/jwt.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { FranchiseModule } from './franchise/franchise.module';
+import { RolesGuard } from './roles/roles.guard';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { FranchiseModule } from './franchise/franchise.module';
   ],
   controllers: [],
   providers: [
-    { provide: APP_GUARD, useClass: JwtAuthGuard }
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard }
   ],
 })
 export class AppModule { }

@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Request, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Request } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserMessagesHelper } from './helpers/messages.helper';
 import { PermissionsService } from 'src/permissions/permissions.service';
@@ -7,6 +7,8 @@ import { PermissionsMessagesHelper } from 'src/permissions/helpers/messages.help
 import { RegisterDto } from './dtos/register.dto';
 import { UpdateUserDto } from './dtos/update.dto';
 import { UpdateUserAdmDto } from './dtos/updateadm.dto';
+import { Roles } from 'src/roles/roles.decorator';
+import { Role } from 'src/roles/role.enum';
 
 @Controller()
 export class UserController {
@@ -54,19 +56,12 @@ export class UserController {
         }
     }
 
+    @Roles(Role.Admin)
     @Get('user/:id')
-    async getUserById(@Request() req, @Param() params) {
+    async getUserById(@Param() params) {
         const { id } = params;
 
-        const { userId } = req?.user;
-
-        const level = await this.checkPermission(userId);
-
-        if (level.cod === 1) {
-            return await this.userService.getUserById(id);
-        } else {
-            throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
-        }
+        return await this.userService.getUserById(id);
 
     }
 
@@ -76,90 +71,72 @@ export class UserController {
         await this.userService.updateuser(userId, dto);
     }
 
-    @Get('adm/users')
+    @Get('users')
     async getUsers(@Request() req) {
         const { userId } = req?.user;
         const user = await this.getUserNotFound(userId);
 
-        const level = await this.checkPermission(userId);
+        return await this.userService.getUserByFranchise((user.franchise).toString())
 
-        if (level.cod === 1) {
-            return await this.userService.getUsers()
-        } else {
-            return await this.userService.getUserByFranchise((user.franchise).toString())
-        }
+    }
+
+    @Get('adm/users')
+    @Roles(Role.Admin)
+    async getUsersByAdm() {
+        return await this.userService.getUsers()
     }
 
     @Put('adm/users/:id')
-    async updateUserByAdm(@Request() req, @Param() params, @Body() dto: UpdateUserAdmDto) {
+    @Roles(Role.Admin)
+    async updateUserByAdm(@Param() params, @Body() dto: UpdateUserAdmDto) {
         const { id } = params;
-        const { userId } = req?.user;
 
-        const levelLoggedUser = await this.checkPermission(userId);
-
-        if (levelLoggedUser.cod === 1) {
-
-            await this.userService.updateUserByAdm(id, dto);
-        } else {
-            throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
-        }
+        await this.userService.updateUserByAdm(id, dto);
     }
 
     @Post('register')
+    @Roles(Role.Manager)
     async registerUser(@Request() req, @Body() dto: RegisterDto) {
         const { userId } = req?.user;
         const user = await this.getUserNotFound(userId);
 
-        const level = await this.checkPermission(userId);
-
-        if (level.cod === 1) {
-            if (await this.userService.existsByEmail(dto.email)) {
-                throw new BadRequestException(UserMessagesHelper.REGISTER_EMAIL_FOUND)
-            }
-
-            if (await this.userService.existsByLogin(dto.login)) {
-                throw new BadRequestException(UserMessagesHelper.REGISTER_LOGIN_FOUND)
-            }
-
-            return this.userService.createdUser(dto)
-        } else if (level.cod === 2) {
-            if (await this.userService.existsByEmail(dto.email)) {
-                throw new BadRequestException(UserMessagesHelper.REGISTER_EMAIL_FOUND)
-            }
-
-            if (await this.userService.existsByLogin(dto.login)) {
-                throw new BadRequestException(UserMessagesHelper.REGISTER_LOGIN_FOUND)
-            }
-
-            const level = await this.permissionsService.getPermissionByCode(3)
-
-            dto.permissions = (level._id).toString();
-            dto.franchise = (user.franchise).toString();
-
-            return this.userService.createdUser(dto)
-        } else {
-            throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
+        if (await this.userService.existsByEmail(dto.email)) {
+            throw new BadRequestException(UserMessagesHelper.REGISTER_EMAIL_FOUND)
         }
+
+        if (await this.userService.existsByLogin(dto.login)) {
+            throw new BadRequestException(UserMessagesHelper.REGISTER_LOGIN_FOUND)
+        }
+
+        const level = await this.permissionsService.getPermissionByCode(3)
+
+        dto.permissions = (level._id).toString();
+        dto.franchise = (user.franchise).toString();
+
+        return this.userService.createdUser(dto)
 
     }
 
+    @Post('adm/register')
+    @Roles(Role.Admin)
+    async registerUserByAdm(@Body() dto: RegisterDto) {
+        if (await this.userService.existsByEmail(dto.email)) {
+            throw new BadRequestException(UserMessagesHelper.REGISTER_EMAIL_FOUND)
+        }
 
+        if (await this.userService.existsByLogin(dto.login)) {
+            throw new BadRequestException(UserMessagesHelper.REGISTER_LOGIN_FOUND)
+        }
+
+        return this.userService.createdUser(dto)
+    }
+
+    @Roles(Role.Admin)
     @Delete('adm/users/:id')
-    async deleteUserByAdm(@Request() req, @Param() params) {
+    async deleteUserByAdm(@Param() params) {
         const { id } = params;
-        const { userId } = req?.user;
 
-        const levelLoggedUser = await this.checkPermission(userId);
-
-        if (!levelLoggedUser) {
-            throw new BadRequestException(PermissionsMessagesHelper.PERMISSION_NOT_FOUND);
-        }
-
-        if (levelLoggedUser.cod === 1) {
-            await this.userService.deleteUserByAdm(id);
-        } else {
-            throw new UnauthorizedException(PermissionsMessagesHelper.PERMISSION_UNAUTHORIZED);
-        }
+        await this.userService.deleteUserByAdm(id);
     }
 
 }
