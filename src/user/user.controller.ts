@@ -13,22 +13,23 @@ import {
 import { UserService } from './user.service';
 import { UserMessagesHelper } from './helpers/messages.helper';
 import { PermissionsService } from 'src/permissions/permissions.service';
-import { PermissionsMessagesHelper } from 'src/permissions/helpers/messages.helper';
 import { RegisterDto } from './dtos/register.dto';
 import { UpdateUserDto } from './dtos/update.dto';
 import { UpdateUserAdmDto } from './dtos/updateadm.dto';
 import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'src/roles/role.enum';
 import { GetUserDto } from './dtos/getuser.dto';
+import { FranchiseService } from 'src/franchise/franchise.service';
 
 @Controller()
 export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly permissionsService: PermissionsService,
+    private readonly franchiseService: FranchiseService,
   ) {}
 
-  async getUserNotFound(userId: any) {
+  async checkIfUserIsLogged(userId: any) {
     const user = await this.userService.getUserById(userId);
 
     if (!user) {
@@ -38,20 +39,16 @@ export class UserController {
     return user;
   }
 
-  async checkPermission(userId: any) {
-    const user = await this.getUserNotFound(userId);
-
-    const level = await this.permissionsService.getPermissionById(
-      user.permissions.toString(),
-    );
-
-    if (!level) {
-      throw new BadRequestException(
-        PermissionsMessagesHelper.PERMISSION_NOT_FOUND,
-      );
-    }
+  async getPermission(permissionId: any) {
+    const level = await this.permissionsService.getPermissionById(permissionId);
 
     return level;
+  }
+
+  async getFranchise(franchiseId: any) {
+    const franchise = await this.franchiseService.getFranchiseById(franchiseId);
+
+    return franchise;
   }
 
   @Get('user')
@@ -63,10 +60,17 @@ export class UserController {
       throw new BadRequestException(UserMessagesHelper.GET_USER_NOT_FOUND);
     }
 
+    const level = await this.getPermission(user.permissions.toString());
+
+    const franchise = await this.getFranchise(user.franchise.toString());
+
     return {
       name: user.name,
       email: user.email,
       permissions: user.permissions,
+      permissionName: level.permissions,
+      franchise: user.franchise,
+      franchiseName: franchise.franchise,
       id: user._id,
     };
   }
@@ -76,59 +80,77 @@ export class UserController {
   async getUserById(@Param() params) {
     const { id } = params;
 
-    const result = await this.userService.getUserById(id);
+    const user = await this.userService.getUserById(id);
 
     return {
-      id: result._id.toString(),
-      login: result.login,
-      email: result.email,
-      permissions: result.permissions,
-      franchise: result.franchise,
+      id: user._id.toString(),
+      login: user.login,
+      email: user.email,
+      permissions: user.permissions,
+      franchise: user.franchise,
     } as unknown as GetUserDto;
+  }
+
+  @Get('users')
+  async getUsers(@Request() req) {
+    const { userId } = req?.user;
+    const user = await this.checkIfUserIsLogged(userId);
+
+    const users = await this.userService.getUserByFranchise(
+      user.franchise.toString(),
+    );
+
+    const usersWithFranchiseAndPermissionName = await Promise.all(
+      users.map(async (user) => {
+        const level = await this.getPermission(user.permissions.toString());
+
+        const franchise = await this.getFranchise(user.franchise.toString());
+
+        return {
+          name: user.name,
+          email: user.email,
+          permissions: user.permissions,
+          permissionName: level.permissions,
+          franchise: user.franchise,
+          franchiseName: franchise.franchise,
+          id: user._id,
+        };
+      }),
+    );
+
+    return usersWithFranchiseAndPermissionName;
+  }
+
+  @Get('adm/users')
+  @Roles(Role.Admin)
+  async getUsersByAdm() {
+    const users = await this.userService.getUsers();
+
+    const usersWithFranchiseAndPermissionName = await Promise.all(
+      users.map(async (user) => {
+        const level = await this.getPermission(user.permissions.toString());
+
+        const franchise = await this.getFranchise(user.franchise.toString());
+
+        return {
+          name: user.name,
+          email: user.email,
+          permissions: user.permissions,
+          permissionName: level.permissions,
+          franchise: user.franchise,
+          franchiseName: franchise.franchise,
+          id: user._id,
+        };
+      }),
+    );
+
+    return usersWithFranchiseAndPermissionName;
   }
 
   @Put('user')
   async updateUser(@Request() req, @Body() dto: UpdateUserDto) {
     const { userId } = req?.user;
     await this.userService.updateuser(userId, dto);
-  }
-
-  @Get('users')
-  async getUsers(@Request() req) {
-    const { userId } = req?.user;
-    const user = await this.getUserNotFound(userId);
-
-    const result = await this.userService.getUserByFranchise(
-      user.franchise.toString(),
-    );
-
-    return result.map(
-      (user) =>
-        ({
-          id: user._id.toString(),
-          login: user.login,
-          email: user.email,
-          permissions: user.permissions,
-          franchise: user.franchise,
-        } as unknown as GetUserDto),
-    );
-  }
-
-  @Get('adm/users')
-  @Roles(Role.Admin)
-  async getUsersByAdm() {
-    const result = await this.userService.getUsers();
-
-    return result.map(
-      (user) =>
-        ({
-          id: user._id.toString(),
-          login: user.login,
-          email: user.email,
-          permissions: user.permissions,
-          franchise: user.franchise,
-        } as unknown as GetUserDto),
-    );
   }
 
   @Put('adm/users/:id')
@@ -143,7 +165,7 @@ export class UserController {
   @Roles(Role.Manager)
   async registerUser(@Request() req, @Body() dto: RegisterDto) {
     const { userId } = req?.user;
-    const user = await this.getUserNotFound(userId);
+    const user = await this.checkIfUserIsLogged(userId);
 
     if (await this.userService.existsByEmail(dto.email)) {
       throw new BadRequestException(UserMessagesHelper.REGISTER_EMAIL_FOUND);

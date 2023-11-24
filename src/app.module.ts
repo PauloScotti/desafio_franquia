@@ -10,6 +10,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { FranchiseModule } from './franchise/franchise.module';
 import { RolesGuard } from './roles/roles.guard';
 import { ProductsModule } from './products/products.module';
+import { StockModule } from './stock/stock.module';
 
 @Module({
   imports: [
@@ -19,12 +20,13 @@ import { ProductsModule } from './products/products.module';
     PermissionsModule,
     FranchiseModule,
     ProductsModule,
-    AuthModule
+    AuthModule,
+    StockModule,
   ],
   controllers: [],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: RolesGuard }
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
-export class AppModule { }
+export class AppModule {}
